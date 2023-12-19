@@ -2,13 +2,13 @@
 #include <iostream> 
 #include <windows.h>
 #include <string>
-#include <vector>
 
 using namespace std;
 
-enum snakesDirection { STOP = 0, LEFT, RIGHT, UP, DOWN };
+enum snakesDirection { STOP, LEFT, RIGHT, UP, DOWN };
+enum dificultes {EASY = 1,  MEDIUM, HARD};
 
-const int width = 80;
+const int width = 40;
 const int height = 20;
 
 int snakeCoordinateX, snakeCoordinateY;
@@ -16,7 +16,7 @@ int fruitCoordinateX, fruitCoordinateY;
 int playerScore;
 int highScore;
 int snakeTailX[1000], snakeTailY[1000];
-int snakeTailLen; 
+int snakeTailLength; 
 bool isGameContinues;
 snakesDirection currentDirection;
 
@@ -32,12 +32,11 @@ void GameInit() {
         fruitCoordinateY = rand() % height;
     } while (fruitCoordinateX == snakeCoordinateX && fruitCoordinateY == snakeCoordinateY);
     playerScore = 0;
-    snakeTailLen = 0;
+    snakeTailLength = 0;
 }
 
 
-void GameRender(string playerName)
-{
+void GameRender(string playerName) {
     system("cls");
 
     for (int column = 0; column < width + 2; ++column) {
@@ -59,8 +58,8 @@ void GameRender(string playerName)
             else {
                 bool isTale;
                 isTale = false;
-                for (int cell = 0; cell < snakeTailLen; ++cell) {
-                    if (snakeTailX[cell] == column && snakeTailY[cell] == row) {
+                for (int cellIndex = 0; cellIndex < snakeTailLength; ++cellIndex) {
+                    if (snakeTailX[cellIndex] == column && snakeTailY[cellIndex] == row) {
                         cout << "\x1B[32mo\033[0m";
                         isTale = true;
                     }
@@ -81,19 +80,18 @@ void GameRender(string playerName)
     cout << "Рекорд: " << highScore << endl;
 }
 
-void UpdateGame()
-{
+void UpdateGame() {
     int prevTailX = snakeTailX[0];
     int prevTailY = snakeTailY[0];
     int tempTailX, tempTailY;
     snakeTailX[0] = snakeCoordinateX;
     snakeTailY[0] = snakeCoordinateY;
 
-    for (int cell = 1; cell < snakeTailLen; ++cell) {
-        tempTailX = snakeTailX[cell];
-        tempTailY = snakeTailY[cell];
-        snakeTailX[cell] = prevTailX;
-        snakeTailY[cell] = prevTailY;
+    for (int cellIndex = 1; cellIndex < snakeTailLength; ++cellIndex) {
+        tempTailX = snakeTailX[cellIndex];
+        tempTailY = snakeTailY[cellIndex];
+        snakeTailX[cellIndex] = prevTailX;
+        snakeTailY[cellIndex] = prevTailY;
         prevTailX = tempTailX;
         prevTailY = tempTailY;
     }
@@ -113,12 +111,21 @@ void UpdateGame()
             break;
     }
 
-    if (snakeCoordinateX >= width || snakeCoordinateX < 0 || snakeCoordinateY >= height || snakeCoordinateY < 0) {
-        isGameContinues = false;
+    if (snakeCoordinateX >= width) {
+        snakeCoordinateX = 0;
+    }
+    if (snakeCoordinateX < 0) {
+        snakeCoordinateX = width - 1;
+    }
+    if (snakeCoordinateY >= height) {
+        snakeCoordinateY = 0;
+    }
+    if (snakeCoordinateY < 0) {
+        snakeCoordinateY = height - 1;
     }
 
-    for (int cell = 0; cell < snakeTailLen; ++cell) {
-        if (snakeTailX[cell] == snakeCoordinateX && snakeTailY[cell] == snakeCoordinateY) {
+    for (int cellIndex = 0; cellIndex < snakeTailLength; ++cellIndex) {
+        if (snakeTailX[cellIndex] == snakeCoordinateX && snakeTailY[cellIndex] == snakeCoordinateY) {
             isGameContinues = false;
         }
     }
@@ -129,39 +136,37 @@ void UpdateGame()
             fruitCoordinateX = rand() % width;
             fruitCoordinateY = rand() % height;
         } while (fruitCoordinateX == snakeCoordinateX && fruitCoordinateY == snakeCoordinateY);
-        ++snakeTailLen;
+        ++snakeTailLength;
     }
     if (playerScore > highScore) {
         highScore = playerScore;
     }
 }
 
-int SetDifficulty()
-{
-    int speedOfSnake, choice;
+int SetDifficulty() {
+    int screenUpdateRate, choiceDigit;
     cout << "\nУРОВНИ СЛОЖНОСТИ:\n1: Лёгкая\n2: Средняя\n3: Сложная "
         "\nУчтите: если будет введён символ, не написанный выше, "
-        "будет автоматически введена средняя сложность "
+        "будет автоматически выбрана средняя сложность "
         "\nВыберите уровень сложности: ";
-    cin >> choice;
-    switch (choice) {
-    case 1:
-        speedOfSnake = 200;
+    cin >> choiceDigit;
+    switch (choiceDigit) {
+    case EASY:
+        screenUpdateRate = 200;
         break;
-    case 2:
-        speedOfSnake = 100;
+    case MEDIUM:
+        screenUpdateRate = 100;
         break;
-    case 3:
-        speedOfSnake = 50;
+    case HARD:
+        screenUpdateRate = 50;
         break;
     default:
-        speedOfSnake = 100;
+        screenUpdateRate = 100;
     }
-    return speedOfSnake;
+    return screenUpdateRate;
 }
 
-void UserInput()
-{
+void UserInput() {
     if (_kbhit()) {
         switch (_getch()) {
         case 'a':
@@ -183,16 +188,15 @@ void UserInput()
     }
 }
 
-int main()
-{
+int main() {
     setlocale(LC_ALL, "RUSSIAN");
     srand(time(0));
 
     string playerName;
     cout << "Введите никнейм: ";
     cin >> playerName;
-    int speedOfSnake;
-    speedOfSnake = SetDifficulty();
+    int screenUpdateRate;
+    screenUpdateRate = SetDifficulty();
 
     while (true){
         GameInit();
@@ -200,22 +204,23 @@ int main()
             GameRender(playerName);
             UserInput();
             UpdateGame();
-            Sleep(speedOfSnake);
+            Sleep(screenUpdateRate);
         }
-        char isRestart;
-        cout << "Продолжить?: ";
-        isRestart = _getch();
-        if (isRestart != 'Y' && isRestart != 'y') {
+        char restartAnswerChar;
+        cout << "Ты проиграл!" << endl;
+
+        cout << "Продолжить? (Y/y): ";
+        restartAnswerChar = _getch();
+        if (restartAnswerChar != 'Y' && restartAnswerChar != 'y') {
             break;
         };
         cout << endl;
-        char isChangeDifficulty;
-        cout << "Скорость сейчас: " << speedOfSnake << endl;
-        cout << "Сменить сложность?: ";
-        isChangeDifficulty = _getch();
+        char changeDifficultyAnswerChar;        
+        cout << "Сменить сложность? (Y/y): ";
+        changeDifficultyAnswerChar = _getch();
         cout << endl;
-        if (isChangeDifficulty == 'Y' || isChangeDifficulty == 'y') {
-            speedOfSnake = SetDifficulty();
+        if (changeDifficultyAnswerChar == 'Y' || changeDifficultyAnswerChar == 'y') {
+            screenUpdateRate = SetDifficulty();
         };
 
     }
